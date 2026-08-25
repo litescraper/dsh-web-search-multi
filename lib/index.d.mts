@@ -1,3 +1,4 @@
+import z from "@deepseek-ai/schemastery";
 import { Context } from "@deepseek-ai/cordis";
 import { WebSearchProvider, WebSearchRequest, WebSearchResult } from "@deepseek-ai/dsh-web";
 
@@ -44,9 +45,11 @@ declare class MultiSearchProvider implements WebSearchProvider {
 declare const WEB_SEARCH_MULTI_SETTINGS_NAMESPACE = "web-search-multi";
 /** Cordis plugin name used by loader diagnostics. */
 declare const name = "dsh-web-search-multi";
-/** The seams this provider registers into and requires. */
+/** The web seam this provider registers into. */
 declare const inject: string[];
+/** Schemastery configuration schema for multi-search plugin and settings persistence. */
+declare const Config: z<MultiSearchConfig>;
 /** Register the multi-provider search backend with `ctx.web` and Web GUI routes. */
 declare function apply(ctx: Context, initialConfig?: MultiSearchConfig): void;
 //#endregion
-export { MULTI_SEARCH_PROVIDER_ID, type MultiSearchConfig, MultiSearchProvider, type SearchProviderKind, WEB_SEARCH_MULTI_SETTINGS_NAMESPACE, apply, inject, name };
+export { Config, MULTI_SEARCH_PROVIDER_ID, type MultiSearchConfig, MultiSearchProvider, type SearchProviderKind, WEB_SEARCH_MULTI_SETTINGS_NAMESPACE, apply, inject, name };
