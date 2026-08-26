@@ -1,4 +1,4 @@
-import type { WebSearchResult } from '@deepseek-ai/dsh-web'
+import type { WebSearchResult, WebSearchSource } from '@deepseek-ai/dsh-web'
 import type { ProviderAdapter } from '../types.ts'
 
 export class BraveAdapter implements ProviderAdapter {
@@ -47,13 +47,17 @@ export class BraveAdapter implements ProviderAdapter {
       }
     }
 
+    const sources: WebSearchSource[] = (data.web?.results ?? [])
+      .filter((r): r is { url: string; [k: string]: unknown } => typeof r?.url === 'string' && r.url.trim().length > 0)
+      .map((r) => ({
+        url: r.url.trim(),
+        ...(typeof r.title === 'string' && r.title.trim().length > 0 ? { title: r.title.trim() } : {}),
+        ...(typeof r.description === 'string' && r.description.trim().length > 0 ? { snippet: r.description.trim() } : {}),
+        ...(typeof r.page_age === 'string' && r.page_age.trim().length > 0 ? { publishedAt: r.page_age.trim() } : {}),
+      }))
+
     return {
-      sources: (data.web?.results ?? []).map((r) => ({
-        url: r.url,
-        title: r.title,
-        snippet: r.description,
-        publishedAt: r.page_age,
-      })),
+      sources,
       truncated: false,
     }
   }

@@ -65,9 +65,9 @@ export class So360Adapter implements ProviderAdapter {
       }
 
       sources.push({
-        url: rawUrl,
-        title: cleanTitle,
-        snippet: cleanSnippet || undefined,
+        url: rawUrl.trim(),
+        ...(cleanTitle.length > 0 ? { title: cleanTitle } : {}),
+        ...(cleanSnippet.length > 0 ? { snippet: cleanSnippet } : {}),
       })
     }
 

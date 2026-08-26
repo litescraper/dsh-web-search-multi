@@ -68,3 +68,59 @@ test('SearxngAdapter configures authorization header and params with token', asy
     console.log('SearXNG live test skipped due to network/instance:', err)
   }
 })
+
+test('MultiSearchProvider cleans sources and omits null/undefined publishedAt or optional fields', async () => {
+  const mockAdapter = {
+    id: 'mock' as any,
+    isAvailable: () => true,
+    search: async () => ({
+      sources: [
+        {
+          url: 'https://example.com/1',
+          title: 'Example 1',
+          snippet: 'Snippet 1',
+          publishedAt: undefined,
+        },
+        {
+          url: 'https://example.com/2',
+          title: '',
+          snippet: undefined,
+          publishedAt: null as any,
+        },
+        {
+          url: 'https://example.com/3',
+          title: 'Example 3',
+          snippet: 'Snippet 3',
+          publishedAt: '2026-08-26',
+        },
+      ],
+      truncated: false,
+    }),
+  }
+
+  const provider = new MultiSearchProvider(
+    () => ({ provider: 'auto', enableFallback: false }),
+    () => undefined,
+  )
+
+  // Inject mock adapter into provider
+  ;(provider as any).adapters.set('mock', mockAdapter)
+  ;(provider as any).configProvider = () => ({ provider: 'mock', enableFallback: false })
+
+  const result = await provider.search({ query: 'test' })
+  assert.equal(result.sources.length, 3)
+
+  // First source: no publishedAt property
+  assert.equal(Object.prototype.hasOwnProperty.call(result.sources[0], 'publishedAt'), false)
+  assert.equal(result.sources[0].title, 'Example 1')
+  assert.equal(result.sources[0].snippet, 'Snippet 1')
+
+  // Second source: empty title omitted, null publishedAt omitted
+  assert.equal(Object.prototype.hasOwnProperty.call(result.sources[1], 'publishedAt'), false)
+  assert.equal(Object.prototype.hasOwnProperty.call(result.sources[1], 'title'), false)
+  assert.equal(Object.prototype.hasOwnProperty.call(result.sources[1], 'snippet'), false)
+
+  // Third source: publishedAt string preserved
+  assert.equal(result.sources[2].publishedAt, '2026-08-26')
+  assert.equal(typeof result.sources[2].publishedAt, 'string')
+})

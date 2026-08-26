@@ -2,6 +2,7 @@ import type {
   WebSearchProvider,
   WebSearchRequest,
   WebSearchResult,
+  WebSearchSource,
 } from '@deepseek-ai/dsh-web'
 import type { MultiSearchConfig, ProviderAdapter, SearchProviderKind } from './types.ts'
 import { So360Adapter } from './adapters/so360.ts'
@@ -134,9 +135,26 @@ export class MultiSearchProvider implements WebSearchProvider {
       }
 
       try {
-        const result = await adapter.search(cleanQuery, maxResults, signal)
-        if (result.sources.length > 0 || result.content) {
-          return result
+        const rawResult = await adapter.search(cleanQuery, maxResults, signal)
+        const sources: WebSearchSource[] = (rawResult.sources ?? [])
+          .filter((s): s is WebSearchSource => Boolean(s && typeof s.url === 'string' && s.url.trim().length > 0))
+          .map((s) => ({
+            url: s.url.trim(),
+            ...(typeof s.title === 'string' && s.title.trim().length > 0 ? { title: s.title.trim() } : {}),
+            ...(typeof s.snippet === 'string' && s.snippet.trim().length > 0 ? { snippet: s.snippet.trim() } : {}),
+            ...(typeof s.publishedAt === 'string' && s.publishedAt.trim().length > 0 ? { publishedAt: s.publishedAt.trim() } : {}),
+          }))
+
+        const content = typeof rawResult.content === 'string' && rawResult.content.trim().length > 0
+          ? rawResult.content.trim()
+          : undefined
+
+        if (sources.length > 0 || content !== undefined) {
+          return {
+            ...(content !== undefined ? { content } : {}),
+            sources,
+            truncated: Boolean(rawResult.truncated),
+          }
         }
       } catch (err) {
         errors.push({ provider: adapter.id, error: err })

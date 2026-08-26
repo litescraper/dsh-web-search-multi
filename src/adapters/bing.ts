@@ -74,9 +74,9 @@ export class BingAdapter implements ProviderAdapter {
       const cleanSnippet = this.stripHtml(rawSnippet).trim()
 
       sources.push({
-        url: rawUrl,
-        title: cleanTitle || undefined,
-        snippet: cleanSnippet || undefined,
+        url: rawUrl.trim(),
+        ...(cleanTitle.length > 0 ? { title: cleanTitle } : {}),
+        ...(cleanSnippet.length > 0 ? { snippet: cleanSnippet } : {}),
       })
     }
 

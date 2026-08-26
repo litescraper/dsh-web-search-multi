@@ -1,4 +1,4 @@
-import type { WebSearchResult } from '@deepseek-ai/dsh-web'
+import type { WebSearchResult, WebSearchSource } from '@deepseek-ai/dsh-web'
 import type { ProviderAdapter } from '../types.ts'
 
 export class BochaAdapter implements ProviderAdapter {
@@ -53,14 +53,20 @@ export class BochaAdapter implements ProviderAdapter {
     }
 
     const pages = data.data?.webPages?.value ?? []
+    const sources: WebSearchSource[] = pages
+      .filter((r): r is { url: string; [k: string]: unknown } => typeof r?.url === 'string' && r.url.trim().length > 0)
+      .map((r) => {
+        const rawSnippet = typeof r.summary === 'string' && r.summary.trim().length > 0 ? r.summary : r.snippet
+        return {
+          url: r.url.trim(),
+          ...(typeof r.name === 'string' && r.name.trim().length > 0 ? { title: r.name.trim() } : {}),
+          ...(typeof rawSnippet === 'string' && rawSnippet.trim().length > 0 ? { snippet: rawSnippet.trim() } : {}),
+          ...(typeof r.dateLastCrawled === 'string' && r.dateLastCrawled.trim().length > 0 ? { publishedAt: r.dateLastCrawled.trim() } : {}),
+        }
+      })
 
     return {
-      sources: pages.map((r) => ({
-        url: r.url,
-        title: r.name,
-        snippet: r.summary || r.snippet,
-        publishedAt: r.dateLastCrawled,
-      })),
+      sources,
       truncated: false,
     }
   }

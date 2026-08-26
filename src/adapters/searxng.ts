@@ -1,4 +1,4 @@
-import type { WebSearchResult } from '@deepseek-ai/dsh-web'
+import type { WebSearchResult, WebSearchSource } from '@deepseek-ai/dsh-web'
 import type { ProviderAdapter } from '../types.ts'
 
 export class SearxngAdapter implements ProviderAdapter {
@@ -64,17 +64,21 @@ export class SearxngAdapter implements ProviderAdapter {
       }>
     }
 
-    const answer = data.answers && data.answers.length > 0 ? data.answers.join('\n') : undefined
+    const answer = data.answers && data.answers.length > 0 ? data.answers.join('\n').trim() : undefined
     const results = (data.results ?? []).slice(0, maxResults)
 
+    const sources: WebSearchSource[] = results
+      .filter((r): r is { url: string; [k: string]: unknown } => typeof r?.url === 'string' && r.url.trim().length > 0)
+      .map((r) => ({
+        url: r.url.trim(),
+        ...(typeof r.title === 'string' && r.title.trim().length > 0 ? { title: r.title.trim() } : {}),
+        ...(typeof r.content === 'string' && r.content.trim().length > 0 ? { snippet: r.content.trim() } : {}),
+        ...(typeof r.publishedDate === 'string' && r.publishedDate.trim().length > 0 ? { publishedAt: r.publishedDate.trim() } : {}),
+      }))
+
     return {
-      content: answer,
-      sources: results.map((r) => ({
-        url: r.url,
-        title: r.title,
-        snippet: r.content,
-        publishedAt: r.publishedDate,
-      })),
+      ...(answer !== undefined && answer.length > 0 ? { content: answer } : {}),
+      sources,
       truncated: false,
     }
   }

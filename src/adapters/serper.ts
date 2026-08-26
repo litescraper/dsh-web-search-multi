@@ -1,4 +1,4 @@
-import type { WebSearchResult } from '@deepseek-ai/dsh-web'
+import type { WebSearchResult, WebSearchSource } from '@deepseek-ai/dsh-web'
 import type { ProviderAdapter } from '../types.ts'
 
 export class SerperAdapter implements ProviderAdapter {
@@ -46,16 +46,21 @@ export class SerperAdapter implements ProviderAdapter {
       }>
     }
 
-    const answer = data.answerBox?.answer ?? data.answerBox?.snippet
+    const rawAnswer = data.answerBox?.answer ?? data.answerBox?.snippet
+    const content = typeof rawAnswer === 'string' && rawAnswer.trim().length > 0 ? rawAnswer.trim() : undefined
+
+    const sources: WebSearchSource[] = (data.organic ?? [])
+      .filter((r): r is { link: string; [k: string]: unknown } => typeof r?.link === 'string' && r.link.trim().length > 0)
+      .map((r) => ({
+        url: r.link.trim(),
+        ...(typeof r.title === 'string' && r.title.trim().length > 0 ? { title: r.title.trim() } : {}),
+        ...(typeof r.snippet === 'string' && r.snippet.trim().length > 0 ? { snippet: r.snippet.trim() } : {}),
+        ...(typeof r.date === 'string' && r.date.trim().length > 0 ? { publishedAt: r.date.trim() } : {}),
+      }))
 
     return {
-      content: answer && answer.trim().length > 0 ? answer : undefined,
-      sources: (data.organic ?? []).map((r) => ({
-        url: r.link,
-        title: r.title,
-        snippet: r.snippet,
-        publishedAt: r.date,
-      })),
+      ...(content !== undefined ? { content } : {}),
+      sources,
       truncated: false,
     }
   }

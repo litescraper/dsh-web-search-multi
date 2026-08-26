@@ -1,4 +1,4 @@
-import type { WebSearchResult } from '@deepseek-ai/dsh-web'
+import type { WebSearchResult, WebSearchSource } from '@deepseek-ai/dsh-web'
 import type { ProviderAdapter } from '../types.ts'
 
 export class TavilyAdapter implements ProviderAdapter {
@@ -47,14 +47,18 @@ export class TavilyAdapter implements ProviderAdapter {
       }>
     }
 
+    const sources: WebSearchSource[] = (data.results ?? [])
+      .filter((r): r is { url: string; [k: string]: unknown } => typeof r?.url === 'string' && r.url.trim().length > 0)
+      .map((r) => ({
+        url: r.url.trim(),
+        ...(typeof r.title === 'string' && r.title.trim().length > 0 ? { title: r.title.trim() } : {}),
+        ...(typeof r.content === 'string' && r.content.trim().length > 0 ? { snippet: r.content.trim() } : {}),
+        ...(typeof r.published_date === 'string' && r.published_date.trim().length > 0 ? { publishedAt: r.published_date.trim() } : {}),
+      }))
+
     return {
-      content: data.answer && data.answer.trim().length > 0 ? data.answer : undefined,
-      sources: (data.results ?? []).map((r) => ({
-        url: r.url,
-        title: r.title,
-        snippet: r.content,
-        publishedAt: r.published_date,
-      })),
+      ...(typeof data.answer === 'string' && data.answer.trim().length > 0 ? { content: data.answer.trim() } : {}),
+      sources,
       truncated: false,
     }
   }
