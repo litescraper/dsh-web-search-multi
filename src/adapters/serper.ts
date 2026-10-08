@@ -18,7 +18,8 @@ export class SerperAdapter implements ProviderAdapter {
     const apiKey = await this.apiKeyProvider()
     if (!apiKey) throw new Error('Serper API key is missing')
 
-    const response = await fetch('https://google.serper.dev/search', {
+    const baseUrl = process.env.SERPER_BASE_URL || 'https://google.serper.dev'
+    const response = await fetch(`${baseUrl.replace(/\/+$/, '')}/search`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

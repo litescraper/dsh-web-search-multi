@@ -102,3 +102,9 @@ npm test
 
 MIT License.
 - Repository: [https://github.com/cinob/dsh-web-search-multi](https://github.com/cinob/dsh-web-search-multi)
+
+## Serper-compatible endpoints
+
+Support any Serper.dev-compatible endpoint (like litescrape.com, serpbase.dev, serpensapi.org, and others).
+
+Set `SERPER_BASE_URL` to the provider base URL; the default is `https://google.serper.dev`. The Serper adapter appends `/search` and continues using `SERPER_API_KEY` for authentication.
